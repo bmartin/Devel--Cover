@@ -11,6 +11,7 @@ use strict;
 use warnings;
 
 use Carp;
+use Cwd 'abs_path';
 use Digest::MD5;
 
 use Devel::Cover::DB;
@@ -170,6 +171,7 @@ sub set_file {
     my $self = shift;
     my ($file) = @_;
     $self->{file} = $file;
+    $self->{abs_file} = abs_path($file);
     my $digest = $self->digest($file);
     if ($digest) {
         # print STDERR "Adding $digest for $file\n";
@@ -235,6 +237,7 @@ sub write {
     }
     for my $file (sort keys %{$self->{f}}) {
         $self->{f}{$file}{file} = $file;
+        $self->{f}{$file}{abs_file} = abs_path($file);
         my $digest = $self->{f}{$file}{digest};
         $digest = $1 if defined $digest && $digest =~ /(.*)/; # ie tainting.
         unless ($digest) {
@@ -292,7 +295,7 @@ sub read {
             }
         }
     }
-    my $d = $self->digest($s->{file});
+    my $d = $self->digest(-f $s->{file} ? $s->{file} : $s->{abs_file});
     # print STDERR "reading $digest from $file: ", Dumper $s;
     if (!$d) {
         # No digest implies that we can't read the file. Likely this is because
